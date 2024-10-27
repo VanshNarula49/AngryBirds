@@ -31,3 +31,27 @@ Useful Gradle tasks and flags:
 
 Note that most tasks that are not specific to a single project can be run with `name:` prefix, where the `name` should be replaced with the ID of a specific project.
 For example, `core:clean` removes `build` folder only from the `core` project.
+# Angry Birds-Inspired Game Project
+
+This project is an Angry Birds-inspired game built with **LibGDX** in Java. It includes familiar characters like birds and pigs, various obstacles, and interactive levels where players use a slingshot to launch birds to destroy pigs and obstacles.
+
+## Game Features
+- **Birds**: Each bird has unique characteristics and images.
+- **Pigs**: Different types of pigs as targets.
+- **Obstacles**: Variety of obstacles with different orientations and sizes.
+- **Slingshot Mechanic**: A basic slingshot functionality to launch birds.
+- **Pause, Win, and Lose Screens**: Navigate through different game states with a pause, win, and lose screen.
+  
+## Screens
+- **Level1 Screen**: Main gameplay screen where you play the game.
+- **Pause Screen**: Pauses the game.
+- **Win Screen**: Displays when you win the level.
+- **Lose Screen**: Displays when you lose the level.
+
+## How to Run the Project
+
+### Prerequisites
+1. **Java Development Kit (JDK)**: Make sure you have JDK 8 or later installed.
+2. **LibGDX**: The project is built with LibGDX, which should be set up as a dependency.
+3. **IDE (Optional)**: You can use IntelliJ IDEA, Eclipse, or any other Java IDE for better project management.
+
