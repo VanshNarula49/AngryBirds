@@ -78,7 +78,7 @@ public class MainMenuScreen implements Screen {
                 game.setScreen(new LevelScreen(game));
             } else if (newGameButtonBounds.contains(touchX, touchY)) {
                 clickSound.play(); // Play chime sound
-                game.setScreen(new Level1Screen(game));
+                System.out.println("New Game Clicked");
             } else if (exitButtonBounds.contains(touchX, touchY)) {
                 clickSound.play(); // Play chime sound
                 Gdx.app.exit();  // Exit the application
