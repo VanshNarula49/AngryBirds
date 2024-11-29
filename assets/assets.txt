@@ -35,7 +35,9 @@ birds/black.png
 birds/red.png
 birds/yellow.png
 gameState.ser
+hs_err_pid24426.log
 hs_err_pid2458.log
+hs_err_pid24598.log
 hs_err_pid96655.log
 hs_err_pid96700.log
 loseScreen/LoseScreen.png
