@@ -21,15 +21,13 @@ import com.badlogic.gdx.physics.box2d.joints.WeldJointDef;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
-
+import java.util.LinkedList;
+import java.util.Queue;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.util.LinkedList;
-import java.util.Queue;
 
-
-public class Level1Screen implements Screen {
+public class Level2Screen implements Screen {
     // World dimensions in meters
     private static final float WORLD_WIDTH = 16f;
     private static final float WORLD_HEIGHT = 9.6f;
@@ -47,14 +45,14 @@ public class Level1Screen implements Screen {
     private Body groundBody;
 
 
-    private RedBird redBird;
+    private YellowBird redBird;
     private YellowBird yellowBird;
     private BlackBird blackBird;
     private Queue<BirdClass> birdsQueue;
     private BirdClass currentBird;
 
 
-    private Structure structure;
+    private Structure2 structure;
 
 
     private Texture groundTexture;
@@ -87,11 +85,14 @@ public class Level1Screen implements Screen {
     private Vector2 dragStart = new Vector2();
     private Vector2 dragCurrent = new Vector2();
 
-    private float maxIntensity = 35f;
-    private float minIntensity = 12f;
 
-    private int currentLevel=1;
-    private float playerX, playerY;
+    // Constraints
+    private float maxAngle = 150f;       // Maximum launch angle in degrees
+    private float minAngle = 30f;        // Minimum launch angle in degrees
+    private float maxIntensity = 35f;    // Maximum launch strength
+    private float minIntensity = 12f;    // Minimum launch strength
+
+
     // Slingshot base (Anchor point)
     private Body slingshotBaseBody;
     private MouseJoint mouseJoint;
@@ -99,16 +100,20 @@ public class Level1Screen implements Screen {
     // Trajectory renderer
     private ShapeRenderer shapeRenderer;
 
-    private float timer = 15f; // Time limit in seconds
+    private float timer = 25f; // Time limit in seconds
     private BitmapFont font; // To display the timer
 
+    private int currentLevel=2;
+    private float playerX, playerY;
 
-
-    public Level1Screen(Main game) {
+    public Level2Screen(Main game) {
         this.game = game;
         initialize();
 
     }
+
+
+
 
     private void initialize() {
         // Initialize Box2D
@@ -152,28 +157,34 @@ public class Level1Screen implements Screen {
 
 
         // Add pigs at specific positions
-        PigClass pig1 = new PigClass(world, 13.1f, 1f, WORLD_WIDTH, WORLD_HEIGHT);
-        PigClass pig2 = new PigClass(world, 13.1f, 4f, WORLD_WIDTH, WORLD_HEIGHT);
+        PigClass pig1 = new PigClass(world,13.1f,1f,WORLD_WIDTH,WORLD_HEIGHT);
+        PigClass pig2 = new PigClass(world,9.2f,1f,WORLD_WIDTH,WORLD_HEIGHT);
+        PigClass pig3 = new PigClass(world,11.6f,4f,WORLD_WIDTH,WORLD_HEIGHT);
+        pig1.setHealth(2000);
+        pig2.setHealth(2000);
+        pig3.setHealth(2000);
+        pig1.setTexture("pigs/smallPig.png");
         pig2.setTexture("pigs/smallPig.png");
-        pig1.setTexture("pigs/bigPig.png");
+        pig3.setTexture("pigs/bigPig.png");
         pigs.add(pig1);
         pigs.add(pig2);
+        pigs.add(pig3);
+
+
 
 
         // Create ground body
         createGroundBody();
         createWall(WORLD_WIDTH, WORLD_HEIGHT / 2f); // Right wall
         createWall(0, WORLD_HEIGHT / 2f);
-
-
         // Create slingshot base (anchor point)
         createSlingshotBase();
 
 
         // Create red bird
-        redBird = new RedBird(world, birdInitialPosition.x, birdInitialPosition.y, 0.5f);
-        yellowBird = new YellowBird(world, birdInitialPosition.x, birdInitialPosition.y, 0.5f);
-        blackBird = new BlackBird(world, birdInitialPosition.x, birdInitialPosition.y, 0.5f);
+        redBird = new YellowBird(world, birdInitialPosition.x, birdInitialPosition.y, 0.5f);
+        yellowBird = new YellowBird(world,birdInitialPosition.x, birdInitialPosition.y, 0.5f);
+        blackBird = new BlackBird(world,birdInitialPosition.x, birdInitialPosition.y, 0.5f);
         birdsQueue.add(redBird);
         birdsQueue.add(yellowBird);
         birdsQueue.add(blackBird);
@@ -183,9 +194,12 @@ public class Level1Screen implements Screen {
 
         if (!birdsQueue.isEmpty()) {
             loadNextBird();
-        } else {
+        }
+        else {
             currentBird = null; // No birds available
         }
+
+
 
 
         // Create structure
@@ -194,6 +208,10 @@ public class Level1Screen implements Screen {
 
         // Set input processor for handling mouse events
         Gdx.input.setInputProcessor(new InputHandler());
+
+
+
+
 
 
         // Consolidate ContactListener
@@ -219,14 +237,14 @@ public class Level1Screen implements Screen {
             }
 
 
-            @Override
-            public void endContact(Contact contact) {
-            }
 
 
             @Override
-            public void preSolve(Contact contact, Manifold oldManifold) {
-            }
+            public void endContact(Contact contact) {}
+
+
+            @Override
+            public void preSolve(Contact contact, Manifold oldManifold) {}
 
 
             @Override
@@ -252,6 +270,8 @@ public class Level1Screen implements Screen {
             }
         });
     }
+
+
     private void createGroundBody() {
         // Define ground dimensions and position in meters
         float groundWidth = WORLD_WIDTH;
@@ -288,8 +308,34 @@ public class Level1Screen implements Screen {
         // Dispose shape
         shape.dispose();
     }
+    private void createWall(float wallX, float wallY) {
+        // Define wall dimensions
+        float wallWidth = 0.1f; // Thin wall
+        float wallHeight = WORLD_HEIGHT;
 
+        // Define body
+        BodyDef wallBodyDef = new BodyDef();
+        wallBodyDef.type = BodyDef.BodyType.StaticBody;
+        wallBodyDef.position.set(wallX, wallY);
 
+        // Create wall body in the world
+        Body wallBody = world.createBody(wallBodyDef);
+
+        // Define shape for the wall
+        PolygonShape wallShape = new PolygonShape();
+        wallShape.setAsBox(wallWidth / 2f, wallHeight / 2f);
+
+        // Create fixture
+        FixtureDef fixtureDef = new FixtureDef();
+        fixtureDef.shape = wallShape;
+        fixtureDef.friction = 0.5f; // Optional friction
+        fixtureDef.restitution = 0f; // No bounce
+
+        wallBody.createFixture(fixtureDef);
+
+        // Dispose of the shape
+        wallShape.dispose();
+    }
     private void createSlingshotBase() {
         // Define slingshot base as a static body
         BodyDef baseBodyDef = new BodyDef();
@@ -331,42 +377,30 @@ public class Level1Screen implements Screen {
 //    }
 
 
-    public int getCurrentLevel() {
-        return currentLevel;
-    }
 
-    // Getter for playerX
-    public float getPlayerX() {
-        return playerX;
-    }
 
-    // Getter for playerY
-    public float getPlayerY() {
-        return playerY;
-    }
+
+
     private void createStructure() {
-        structure = new Structure(world, "obstacles/images.jpeg"); // Adjust the path as needed
+        // Create a custom structure
+        structure = new Structure2(world, "obstacles/images.jpeg"); // Adjust the path as needed
     }
 
 
     @Override
     public void render(float delta) {
 
-        if (currentBird instanceof RedBird) {
-            ((RedBird) currentBird).update(delta); // Handle ability timer for RedBird
-        }
 
         if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
-            if (currentBird instanceof RedBird) {
-                ((RedBird) currentBird).activateAbility(); // Activate RedBird's special ability
-
+            if (currentBird instanceof YellowBird) {
+                ((YellowBird) currentBird).activateAbility(); // Activate YellowBird's special ability
             }
         }
         timer -= delta;
 
         // Check if time has run out
         if (timer <= 0) {
-            game.setScreen(new LoseScreen(game,1)); // Transition to the LoseScreen
+            game.setScreen(new LoseScreen(game,2)); // Transition to the LoseScreen
             return; // Exit the render method to avoid further processing
         }
 
@@ -442,6 +476,10 @@ public class Level1Screen implements Screen {
 
         batch.end();
 
+
+
+
+        // Draw the health bars for the pigs using ShapeRenderer
         shapeRenderer.setProjectionMatrix(camera.combined);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         for (PigClass pig : pigs) {
@@ -449,11 +487,15 @@ public class Level1Screen implements Screen {
         }
         shapeRenderer.end();
 
+
+        // Draw trajectory and elastic bands while dragging
         if (isDragging) {
             drawTrajectory();
             drawElasticBands();
         }
 
+
+        // Update and remove dead pigs
         for (int i = pigs.size - 1; i >= 0; i--) {
             PigClass pig = pigs.get(i);
             pig.update();
@@ -464,8 +506,12 @@ public class Level1Screen implements Screen {
 
 
         if (checkWinCondition()) {
-            game.setScreen(new WinScreen(game,1)); // Transition to the win screen
+            game.setScreen(new WinScreen(game,2)); // Transition to the win screen
         }
+
+
+
+        // Render debug graphics (optional)
         debugRenderer.render(world, camera.combined);
 
         if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
@@ -475,9 +521,24 @@ public class Level1Screen implements Screen {
                 game.setScreen(new PauseScreen(game,this)); // Switch to PauseScreen
             }
         }
+        // Reset bird if needed
         resetBirdIfNeeded();
+//        loadNextBird();
     }
 
+    public int getCurrentLevel() {
+        return currentLevel;
+    }
+
+    // Getter for playerX
+    public float getPlayerX() {
+        return playerX;
+    }
+
+    // Getter for playerY
+    public float getPlayerY() {
+        return playerY;
+    }
 
     private boolean checkWinCondition() {
         return pigs.size == 0;
@@ -537,17 +598,25 @@ public class Level1Screen implements Screen {
         shapeRenderer.end();
     }
 
+
+    /**
+     * Draws the elastic bands of the slingshot.
+     */
     private void drawElasticBands() {
         shapeRenderer.setProjectionMatrix(camera.combined);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         shapeRenderer.setColor(0.545f, 0.271f, 0.075f, 1); // Brown color for elastic bands
 
+
+        // Draw left elastic band
         shapeRenderer.rectLine(
             slingshotBaseBody.getPosition().x - 0.1f, slingshotBaseBody.getPosition().y + 0.2f,
             redBird.getPosition().x, redBird.getPosition().y,
             0.05f
         );
 
+
+        // Draw right elastic band
         shapeRenderer.rectLine(
             slingshotBaseBody.getPosition().x + 0.1f, slingshotBaseBody.getPosition().y + 0.2f,
             redBird.getPosition().x, redBird.getPosition().y,
@@ -558,11 +627,20 @@ public class Level1Screen implements Screen {
         shapeRenderer.end();
     }
 
+
+    /**
+     * Resets the bird if it goes out of bounds or its velocity is below a threshold.
+     */
+
+
     private void resetBirdIfNeeded() {
         Vector2 birdPos = redBird.getPosition();
         if (birdPos.x < 0 || birdPos.x > WORLD_WIDTH || birdPos.y < 0 || birdPos.y > WORLD_HEIGHT) {
             resetBird();
         }
+
+
+        // Optionally, reset if bird's velocity is below a threshold and it's not being dragged
         if (!isDragging && mouseJoint == null && redBird.getBody().getLinearVelocity().len() < 0.1f) {
             resetBird();
         }
@@ -582,6 +660,9 @@ public class Level1Screen implements Screen {
 
     }
 
+
+
+
     private void loadNextBird() {
         if (!birdsQueue.isEmpty()) {
             currentBird = birdsQueue.poll(); // Get the next bird
@@ -590,43 +671,42 @@ public class Level1Screen implements Screen {
         } else {
             currentBird = null; // No birds left
             System.out.println("No birds left in the queue.");
+            // Optionally handle end-of-level logic here
         }
         System.out.println("Current bird: " + (currentBird != null ? "Available" : "None"));
 
 
     }
     private void resetBird() {
+        // Destroy existing bird body
         world.destroyBody(redBird.getBody());
-        redBird = new RedBird(world, birdInitialPosition.x, birdInitialPosition.y, 0.5f);
+
+        // Create a new bird
+        redBird = new YellowBird(world, birdInitialPosition.x, birdInitialPosition.y, 0.5f);
+        // Reattach the bird to the slingshot
         attachBirdToSlingshot();
+
+
+        // Set isDragging to false
         isDragging = false;
+
+
+
+
+
     }
-    private void createWall(float wallX, float wallY) {
-        // Define wall dimensions
-        float wallWidth = 0.1f; // Thin wall
-        float wallHeight = WORLD_HEIGHT;
 
-        // Define body
-        BodyDef wallBodyDef = new BodyDef();
-        wallBodyDef.type = BodyDef.BodyType.StaticBody;
-        wallBodyDef.position.set(wallX, wallY);
 
-        // Create wall body in the world
-        Body wallBody = world.createBody(wallBodyDef);
+    /**
+     * Resets the bird to its initial position and reattaches it to the slingshot.
+     */
 
-        // Define shape for the wall
-        PolygonShape wallShape = new PolygonShape();
-        wallShape.setAsBox(wallWidth / 2f, wallHeight / 2f);
 
-        // Create fixture
-        FixtureDef fixtureDef = new FixtureDef();
-        fixtureDef.shape = wallShape;
-        fixtureDef.friction = 0.5f; // Optional friction
-        fixtureDef.restitution = 0f; // No bounce
 
-        wallBody.createFixture(fixtureDef);
-        wallShape.dispose();
-    }
+
+
+
+
 
     @Override
     public void resize(int width, int height) {
@@ -647,6 +727,8 @@ public class Level1Screen implements Screen {
         shapeRenderer.dispose();
         backgroundTexture.dispose();
         font.dispose();
+
+
     }
 
 
@@ -658,7 +740,7 @@ public class Level1Screen implements Screen {
             playerX = loadedGameState.getPlayerX();
             playerY = loadedGameState.getPlayerY();
         } else {
-            // Start a new game state if no saved game state is found
+            // Start new game state if no saved game state
             currentLevel = 1;
             playerX = 100f;  // Initial player position
             playerY = 200f;
@@ -673,6 +755,8 @@ public class Level1Screen implements Screen {
             return null;
         }
     }
+
+
     @Override public void pause() {}
     @Override public void resume() {}
     @Override public void hide() {}
@@ -791,6 +875,10 @@ public class Level1Screen implements Screen {
             return false;
         }
 
+
+        /**
+         * Converts screen coordinates to world coordinates.
+         */
         private Vector2 screenToWorld(int screenX, int screenY) {
             Vector3 touchPos = new Vector3(screenX, screenY, 0);
             camera.unproject(touchPos, viewport.getScreenX(), viewport.getScreenY(), viewport.getScreenWidth(), viewport.getScreenHeight());
@@ -799,4 +887,6 @@ public class Level1Screen implements Screen {
 
 
     }
+
+
 }
